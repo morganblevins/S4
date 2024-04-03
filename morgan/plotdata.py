@@ -1,39 +1,80 @@
-# This Python script allows users to input x-y data from the terminal and plots it using Matplotlib. 
-# The data input format is flexible, accepting an x-value followed by an arbitrary number of y-values, 
-# each separated by spaces. Each set of y-values (y1, y2, etc.) is stored separately, allowing them 
-# to be plotted as individual series on the same graph.
-# written using ChatGPT 3.5 April 2024
+"""
+This Python script reads x-y data from a text file and plots it using Matplotlib.
 
+The script expects a text file containing x-y data as input. Each line of the file should contain an x value 
+followed by one or more y values, separated by spaces. The script dynamically handles an arbitrary number of 
+y values for each x value, allowing for flexible plotting of multiple data series.
+
+Usage:
+    python plotdata.py <filename>
+
+Arguments:
+    <filename>: Name of the text file containing the x-y data.
+
+Functions:
+    read_data_from_file(filename):
+        Reads x-y data from the specified text file and returns a dictionary containing x and y data.
+
+    plot_data_from_file(filename):
+        Plots the x-y data read from the specified text file using Matplotlib.
+
+File Structure:
+    - The script consists of two main functions: read_data_from_file and plot_data_from_file.
+    - The read_data_from_file function reads data from the file and returns a dictionary containing x and y data.
+    - The plot_data_from_file function plots the x-y data using Matplotlib.
+
+Error Handling:
+    - The script handles errors gracefully, including FileNotFoundError if the specified file does not exist.
+
+Dependencies:
+    - Matplotlib: A plotting library for Python. Install it using pip if not already installed: pip install matplotlib.
+"""
+
+import sys
 import matplotlib.pyplot as plt
 
-def plot_data_from_terminal():
-    # Initialize a dictionary to store lists of y values corresponding to each x value
-    data = {}
+def read_data_from_file(filename):
+    """
+    Read x-y data from a text file.
+
+    Args:
+    filename (str): Name of the text file containing the data.
+
+    Returns:
+    dict: A dictionary containing x and y data read from the file.
+    """
+    data = {'x': [], 'y': []}
 
     try:
-        # Continuously read input from the terminal until an empty line is entered
-        while True:
-            # Read input from the terminal
-            line = input("Enter x, y1, y2, y3, ... values (or press Enter to finish): ").strip()
-            if not line:
-                break  # Exit loop if an empty line is entered
+        with open(filename, 'r') as file:
+            max_y_arrays = 0
+            for line in file:
+                values = line.split()
+                x = float(values[0])
+                data['x'].append(x)
+                for i, y in enumerate(values[1:], 1):
+                    y_value = float(y)
+                    if i > max_y_arrays:
+                        max_y_arrays = i
+                        data['y'].append([])
+                    data['y'][i-1].append(y_value)
+    except FileNotFoundError:
+        print(f"Error: File '{filename}' not found.")
 
-            # Split the input line into x and y values
-            values = line.split()
-            x = float(values[0])
-            for i, y in enumerate(values[1:]):
-                y_values = float(y)
-                if i not in data:
-                    data[i] = {'x': [], 'y': []}
-                data[i]['x'].append(x)
-                data[i]['y'].append(y_values)
-            
-    except KeyboardInterrupt:
-        print("\nKeyboard interrupt detected. Plotting data...")
+    return data
+
+
+def plot_data_from_file(filename):
+    # Read data from file
+    data = read_data_from_file(filename)
+    
+    # Debug: Print the lengths of x and y arrays
+    print("Length of x array:", len(data['x']))
+    print("Lengths of y arrays:", [len(y) for y in data['y']])
 
     # Plot the data
-    for i in range(len(data)):
-        plt.plot(data[i]['x'], data[i]['y'], marker='o', linestyle='-', label=f'y{i+1}')
+    for i, y_values in enumerate(data['y']):
+        plt.plot(data['x'], y_values, marker='o', linestyle='-', label=f'y{i+1}')
 
     plt.title('X-Y Data Plot')
     plt.xlabel('X')
@@ -42,7 +83,14 @@ def plot_data_from_terminal():
     # plt.grid(True)
     plt.show()
 
+
+# if __name__ == "__main__":
+#     filename = "/home/mo/S4/morgan/data.txt"  # Specify the name of your text file here
+#     plot_data_from_file(filename)
+
 if __name__ == "__main__":
-    plot_data_from_terminal()
-
-
+    if len(sys.argv) != 2:
+        print("Usage: python script.py <filename>")
+    else:
+        filename = sys.argv[1]
+        plot_data_from_file(filename)
