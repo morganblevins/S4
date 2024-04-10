@@ -16,23 +16,44 @@ function generate_filename()
     return filename
 end
 
+c_const = 3e8
+a = 0.43e-6
+lbda_end   = 0.8e-6 -- say we compute at 1µm wavelength
+lbda_start = 0.4e-6 -- say we compute at 1µm wavelength
+f_start = c_const/lbda_end -- ferquency in SI units
+f_end = c_const/lbda_start -- ferquency in SI units
+f0_start = f_start/c_const*a -- so the reduced frequency is f/c_const*a[SI units]
+f0_end = f_end/c_const*a -- so the reduced frequency is f/c_const*a[SI units]
 
-S = S4.NewSimulation()
-S:SetLattice({1,0}, {0,1})
-S:SetNumG(100)
+PhC_h = 0.045
+slab_h = 0.445
+SiO2_h = 1.0
+holeradius = 0.130
+
 epsxxr  = -21
 epsxxi  = 15
 epsyyr  = -17
 epsyyi  = 11
+
+S = S4.NewSimulation()
+S:SetLattice({a,0}, {0,a})
+S:SetNumG(100)
+
 S:AddMaterial("PbTaSe2", { 
     {epsxxr, epsxxi}, {0, 0}, {0, 0},
 	{0, 0}, {epsxxr, epsxxi}, {0, 0},
 	{0, 0}, {0, 0}, {epsyyr, epsyyi}
 	})
 S:AddMaterial("Vacuum", {1,0})
+S:AddMaterial("Si", {12,0})
+S:AddMaterial("SiO2", {1.45,0})
+
 S:AddLayer('AirAbove', 0 , 'Vacuum')
-S:AddLayer('Slab', 0.5, 'PbTaSe2')
-S:SetLayerPatternCircle('Slab', 'Vacuum', {0,0}, 0.2)
+S:AddLayer('PhC', PhC_h, 'PbTaSe2')
+S:SetLayerPatternCircle('PhC', 'Vacuum', {0,0}, holeradius)
+S:AddLayer('Slab', slab_h, 'PbTaSe2')
+S:AddLayer('SiO2', SiO2_h, 'SiO2')
+S:AddLayer('SiBelow', 0, 'Si')
 S:AddLayerCopy('AirBelow', 0, 'AirAbove')
 
 S:SetExcitationPlanewave(
@@ -51,7 +72,7 @@ local file = io.open(filename, "w")
 -- Write the header specifying the columns
 -- file:write("freq\tforward\tbackward\n")
 
-for freq=0.25,1,0.03 do
+for freq=f0_start,f0_end,0.03 do
 	S:SetFrequency(freq)
 	forward,backward = S:GetPoyntingFlux('AirAbove', 0)
 	forward = S:GetPoyntingFlux('AirBelow', 0)
