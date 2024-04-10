@@ -50,7 +50,7 @@ def read_data_from_file(filename):
             max_y_arrays = 0
             for line in file:
                 values = line.split()
-                x = float(values[0])
+                x = 1/float(values[0])
                 data['x'].append(x)
                 for i, y in enumerate(values[1:], 1):
                     y_value = float(y)
@@ -71,14 +71,15 @@ def plot_data_from_file(filename):
     # Debug: Print the lengths of x and y arrays
     print("Length of x array:", len(data['x']))
     print("Lengths of y arrays:", [len(y) for y in data['y']])
-
+    
     # Plot the data
     for i, y_values in enumerate(data['y']):
         plt.plot(data['x'], y_values, marker='o', linestyle='-', label=f'y{i+1}')
 
     plt.title('X-Y Data Plot')
-    plt.xlabel('X')
-    plt.ylabel('Y')
+    plt.xlabel('c/a')
+    # plt.xlabel('m')
+    plt.ylabel('Reflection / Transmissions')
     plt.legend()
     # plt.grid(True)
     plt.show()
