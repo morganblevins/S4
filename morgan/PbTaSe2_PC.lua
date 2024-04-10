@@ -11,23 +11,60 @@ function generate_filename()
     local year, month, day, hour, min, sec = datetime_string:match("(%d+)-(%d+)-(%d+)_(%d+)-(%d+)-(%d+)")
 
     -- Construct the filename
-    local filename = "data_".. year .. "-" .. month .. "-" .. day .. "_" .. hour .. "-" .. min .. "-" .. sec .. ".txt"
+    local filename = "PbTaSe2_PhC_sweep_".. year .. "-" .. month .. "-" .. day .. "_" .. hour .. "-" .. min .. "-" .. sec .. ".txt"
 
     return filename
 end
 
+
+-- Function to save matrix with labels to a .txt file
+function saveMatrixWithLabelsToFile(matrix, xLabels, yLabels, filename)
+    local file = io.open(filename, "w") -- Open file for writing
+    if not file then
+        print("Error: Unable to open file for writing")
+        return
+    end
+
+    -- Write column labels
+    file:write("\t")
+    for _, label in ipairs(yLabels) do
+        file:write(label .. "\t")
+    end
+    file:write("\n")
+
+    -- Write matrix with row labels
+    for i, row in ipairs(matrix) do
+        file:write(xLabels[i] .. "\t") -- Write row label
+        for j, val in ipairs(row) do
+            file:write(val) -- Write element
+            if j < #row then
+                file:write("\t") -- Separate elements with a tab
+            else
+                file:write("\n") -- Move to the next line after a row is completed
+            end
+        end
+    end
+
+    file:close() -- Close the file
+    print("Matrix with labels saved to " .. filename)
+end
+
+
+
 c_const = 3e8
 a = 0.43e-6
-lbda_end   = 0.8e-6 -- say we compute at 1µm wavelength
-lbda_start = 0.4e-6 -- say we compute at 1µm wavelength
+lbda_end   = 0.63e-6 -- say we compute at 1µm wavelength
+lbda_start = 0.62e-6 -- say we compute at 1µm wavelength
 f_start = c_const/lbda_end -- ferquency in SI units
 f_end = c_const/lbda_start -- ferquency in SI units
 f0_start = f_start/c_const*a -- so the reduced frequency is f/c_const*a[SI units]
 f0_end = f_end/c_const*a -- so the reduced frequency is f/c_const*a[SI units]
+print (f0_start .. '\t' .. f0_end )
 
+a = 0.43
 PhC_h = 0.045
-slab_h = 0.445
-SiO2_h = 1.0
+slab_h = 0.355 -- thickness of PbTaSe2 flakes is about 400 nm
+SiO2_h = 0.3
 holeradius = 0.130
 
 epsxxr  = -21
@@ -50,11 +87,10 @@ S:AddMaterial("SiO2", {1.45,0})
 
 S:AddLayer('AirAbove', 0 , 'Vacuum')
 S:AddLayer('PhC', PhC_h, 'PbTaSe2')
-S:SetLayerPatternCircle('PhC', 'Vacuum', {0,0}, holeradius)
 S:AddLayer('Slab', slab_h, 'PbTaSe2')
 S:AddLayer('SiO2', SiO2_h, 'SiO2')
 S:AddLayer('SiBelow', 0, 'Si')
-S:AddLayerCopy('AirBelow', 0, 'AirAbove')
+-- S:SetLayerPatternCircle('PhC', 'Vacuum', {0,0}, holeradius)
 
 S:SetExcitationPlanewave(
 	{0,0}, -- incidence angles
@@ -64,23 +100,59 @@ S:SetExcitationPlanewave(
 --S:UsePolarizationDecomposition()
 -- file = "PbTaSe2_data.txt"
 
+-- Write the header specifying the columns
+-- file:write("freq\tforward\tbackward\n")
+local a = {0.4, 0.43, 0.46, 0.49, 0.52}
+local holeradius = {0.05, 0.1, 0.15}
+mt = {}
+ii = 1
+jj = 1
+for i = 1, #a do
+	S:SetLattice({a[i],0}, {0,a[i]})
+	mt[i]={}
+	for j=1, #holeradius do
+		S:SetLayerPatternCircle('PhC', 'Vacuum', {0,0}, holeradius[j])
+		abs_int = 0
+		for freq=f0_start,f0_end,0.01 do
+			for theta=0, 30, 10 do
+				S:SetExcitationPlanewave(
+				{theta,0}, -- incidence angles
+				{0,0}, -- s-polarization amplitude and phase (in degrees)
+				{1,0}) -- p-polarization amplitude and phase
+				S:SetFrequency(freq)
+				forward,backward = S:GetPoyntingFlux('AirAbove', 0)
+				forward = S:GetPoyntingFlux('SiBelow', 0)
+				abs_int = abs_int + (1 - forward + backward)
+				-- print (freq .. '\t' .. forward .. '\t' .. backward)
+				io.stdout:flush()
+			end
+		end
+		print (a[i] .. '\t' .. holeradius[j] .. '\t' .. abs_int )
+		mt[i][j]= abs_int
+	end
+end
+-- print("Generated filename:", filename)
+
 -- Open a file in write mode
 local filen = generate_filename()
 local filename = "/home/mo/S4/morgan/" .. filen
 local file = io.open(filename, "w")
 
--- Write the header specifying the columns
--- file:write("freq\tforward\tbackward\n")
+-- Save matrix with labels to file
+saveMatrixWithLabelsToFile(mt, a, holeradius, filename)
 
-for freq=f0_start,f0_end,0.03 do
-	S:SetFrequency(freq)
-	forward,backward = S:GetPoyntingFlux('AirAbove', 0)
-	forward = S:GetPoyntingFlux('AirBelow', 0)
-	print (freq .. '\t' .. forward .. '\t' .. backward)
-    file:write(string.format("%.2f\t%.2f\t%.2f\n", freq, forward, backward))
-	io.stdout:flush()
-end
-
-print("Generated filename:", filename)
- 
 file:close()
+
+-- Define the Python script file name
+local pythonScript = "morgan/plotHeatmap_matrix_with_labels.py"
+
+-- Execute the Python script using os.execute
+local command = "python3 " .. pythonScript .. " " .. filename
+local status = os.execute(command)
+
+-- Check the status of the execution
+if status == true then
+    print("Python script executed successfully.")
+else
+    print("Error executing Python script.")
+end
