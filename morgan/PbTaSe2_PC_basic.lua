@@ -44,12 +44,13 @@ epsyyi  = 11
 
 S = S4.NewSimulation()
 
-a = 0.5 -- 750 nm
+a = 0.6        -- 600 nm
+d = 0.050      -- 50 nm
+r = 0.35*a     -- 0.35 a
+d_flake = 0.4  -- 400 nm
+
 S:SetLattice({a,0}, {0,a})
 S:SetNumG(100)
-d = 0.030      -- 30 nm
-r = 0.35*a     -- 0.40 a
-d_flake = 0.4 -- 400 nm
 
 S:AddMaterial("Silicon", {12.1,0}) 
 S:AddMaterial("SiO2", {1.45,0}) 
@@ -68,35 +69,28 @@ S:AddLayer('AirAbove',  -- layer name
            0,           -- thickness
            'Vacuum')    -- background material
 
--- PC of Silicon ontop of PbTaSe2 flake
-S:AddLayer('PhC', d, 'Silicon')
-S:SetLayerPatternCircle('PhC',   -- which layer to alter
-                        'Vacuum', -- material in circle
-	                    {0,0},    -- center
-	                    r)      -- radius
-
--- PC of PbTaSe2 pillars ontop of PbTaSe2 flake
--- S:AddLayer('PhC', d, 'Vacuum')
--- S:SetLayerPatternCircle('PhC',   -- which layer to alter
---                         'PbTaSe2', -- material in circle
--- 	                    {0,0},    -- center
--- 	                    r)      -- radius
-
--- PC of holes in PbTaSe2 ontop of PbTaSe2 flake
--- S:AddLayer('PhC', d, 'PbTaSe2')
+-- PC of holes in Silicon ontop of PbTaSe2 flake
+-- S:AddLayer('PhC', d, 'Silicon')
 -- S:SetLayerPatternCircle('PhC',   -- which layer to alter
 --                         'Vacuum', -- material in circle
 -- 	                    {0,0},    -- center
 -- 	                    r)      -- radius
 
+-- PC of holes in PbTaSe2 ontop of PbTaSe2 flake
+S:AddLayer('PhC', d, 'PbTaSe2')
+S:SetLayerPatternCircle('PhC',   -- which layer to alter
+                        'Vacuum', -- material in circle
+	                    {0,0},    -- center
+	                    r)      -- radius
+
 S:AddLayer('ActiveSlab', d_flake, 'PbTaSe2')
 
--- If only on a SiO2 on Si wafer:
+-- If on a SiO2 on Si wafer:
 S:AddLayer('SiO2', 0.3, 'SiO2') -- layer to copy
 S:AddLayer('SiWafer', 0, 'Silicon') -- layer to copy
 
 -- If on a perfect mirror
--- S:AddLayer('MirrorBelow', 0, 'PerfMirror') -- layer to copy
+-- S:AddLayer('MirrorBelow', 0, 'PerfMirror')
 
 S:SetExcitationPlanewave(
 	{0,0}, -- incidence angles
@@ -114,7 +108,8 @@ local file = io.open(filename, "w")
 -- Write the header specifying the columns
 -- file:write("freq\tforward\tbackward\n")
 
-for freq=0.3,3,0.05 do
+-- for freq=0.3,3,0.05 do
+for freq=f0_start,f0_end,0.01 do
     S:SetFrequency(freq)
 	forward,backward = S:GetPoyntingFlux('AirAbove', 0)
     -- fw1, bw1 = S:GetPoyntingFlux('ActiveSlab', 0)
