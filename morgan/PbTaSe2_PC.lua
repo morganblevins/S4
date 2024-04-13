@@ -49,6 +49,13 @@ function saveMatrixWithLabelsToFile(matrix, xLabels, yLabels, filename)
     print("Matrix with labels saved to " .. filename)
 end
 
+function abs(x)
+    if x < 0 then
+        return -x
+    else
+        return x
+    end
+end
 
 
 c_const = 3e8
@@ -62,8 +69,8 @@ f0_end = f_end/c_const*a -- so the reduced frequency is f/c_const*a[SI units]
 print (f0_start .. '\t' .. f0_end )
 
 a = 0.43
-PhC_h = 0.045
-slab_h = 0.355 -- thickness of PbTaSe2 flakes is about 400 nm
+PhC_h = 0.05
+slab_h = 0.350 -- thickness of PbTaSe2 flakes is about 400 nm
 SiO2_h = 0.3
 holeradius = 0.130
 
@@ -103,7 +110,9 @@ S:SetExcitationPlanewave(
 -- Write the header specifying the columns
 -- file:write("freq\tforward\tbackward\n")
 local a = {0.4, 0.43, 0.46, 0.49, 0.52}
-local holeradius = {0.05, 0.1, 0.15}
+-- local holeradius = {0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15}
+local holeradius = {0.05,0.1, 0.15}
+
 mt = {}
 ii = 1
 jj = 1
@@ -113,16 +122,22 @@ for i = 1, #a do
 	for j=1, #holeradius do
 		S:SetLayerPatternCircle('PhC', 'Vacuum', {0,0}, holeradius[j])
 		abs_int = 0
-		for freq=f0_start,f0_end,0.01 do
-			for theta=0, 30, 10 do
+		-- for freq=f0_start,f0_end,0.01 do
+		freq=f0_start do
+			-- for theta=0, 30, 10 do
+			theta=0 do
 				S:SetExcitationPlanewave(
 				{theta,0}, -- incidence angles
 				{0,0}, -- s-polarization amplitude and phase (in degrees)
 				{1,0}) -- p-polarization amplitude and phase
 				S:SetFrequency(freq)
-				forward,backward = S:GetPoyntingFlux('AirAbove', 0)
-				forward = S:GetPoyntingFlux('SiBelow', 0)
-				abs_int = abs_int + (1 - forward + backward)
+				-- forward,backward = S:GetPoyntingFlux('AirAbove', 0)
+				-- forward = S:GetPoyntingFlux('SiBelow', 0)
+				-- Absorption in the PbTaSe2 slab:
+				inc, r = S:GetPowerFlux('AirAbove', 0)
+				fw1, bw1 = S:GetPowerFlux('Slab', 0)
+    			fw2, bw2 = S:GetPowerFlux('Slab', slab_h)
+				abs_int = abs((fw2-fw1-(bw1-bw2))) + abs_int
 				-- print (freq .. '\t' .. forward .. '\t' .. backward)
 				io.stdout:flush()
 			end

@@ -77,7 +77,8 @@ def plot_data_from_file(filename):
         plt.plot(data['x'], y_values, marker='o', linestyle='-', label=f'y{i+1}')
 
     plt.title('X-Y Data Plot')
-    plt.xlabel('c/a')
+    # plt.xlabel('Frequency (um)^-1')
+    plt.xlabel('Wavelength (um)')
     # plt.xlabel('m')
     plt.ylabel('Reflection / Transmissions')
     plt.legend()

@@ -1,7 +1,7 @@
--- Design of PC for enhances absorption into a PbTaSe2 flake for photocurrent generation
--- PbTaSe2 parameters via 
--- "DFT based investigation of bulk mechanical, thermophysical and optoelectronic 
--- properties of PbTaSe2 topological semimetal" by  A.S.M. Muhasin Reza, S.H. Naqib
+-- Bottom pane of Fig. 12 in
+-- Shanhui Fan and J. D. Joannopoulos,
+-- "Analysis of guided resonances in photonic crystal slabs",
+-- Phys. Rev. B, Vol. 65, 235112
 
 function generate_filename()
     -- Get the current date and time as a formatted string
@@ -11,7 +11,7 @@ function generate_filename()
     local year, month, day, hour, min, sec = datetime_string:match("(%d+)-(%d+)-(%d+)_(%d+)-(%d+)-(%d+)")
 
     -- Construct the filename
-    local filename = "PbTaSe2_PC_".. year .. "-" .. month .. "-" .. day .. "_" .. hour .. "-" .. min .. "-" .. sec .. ".txt"
+    local filename = "SiO2_PC_".. year .. "-" .. month .. "-" .. day .. "_" .. hour .. "-" .. min .. "-" .. sec .. ".txt"
 
     return filename
 end
@@ -32,71 +32,38 @@ f_start = c_const/lbda_end -- ferquency in SI units
 f_end = c_const/lbda_start -- ferquency in SI units
 f0_start = f_start/c_const*unit -- so the reduced frequency is f/c_const*a[SI units]
 f0_end = f_end/c_const*unit -- so the reduced frequency is f/c_const*a[SI units]
--- print (f0_start .. '\t' .. f0_end )
+print (f0_start .. '\t' .. f0_end )
 
--- PbTaSe2 parameters via 
--- "DFT based investigation of bulk mechanical, thermophysical and optoelectronic 
--- properties of PbTaSe2 topological semimetal" by  A.S.M. Muhasin Reza, S.H. Naqib
-epsxxr  = -20
-epsxxi  = 14
-epsyyr  = -14
-epsyyi  = 11
+a = 0.43 -- 430 nm
+PhC_d = 0.05 -- 50 nm
+slab_d = 400-PhC_d -- thickness of PbTaSe2 flakes is about 400 nm
+r = 0.130 -- 130 nm
 
 S = S4.NewSimulation()
-
-a = 0.5 -- 750 nm
 S:SetLattice({a,0}, {0,a})
 S:SetNumG(100)
-d = 0.030      -- 30 nm
-r = 0.35*a     -- 0.40 a
-d_flake = 0.4 -- 400 nm
 
+S:AddMaterial("SiO2", {1.45,0})
 S:AddMaterial("Silicon", {12.1,0}) 
-S:AddMaterial("SiO2", {1.45,0}) 
 S:AddMaterial("Vacuum", {1,0})
 S:AddMaterial("PerfMirror", {-1.0e10,0})
--- S:AddMaterial("PbTaSe2", {  -- anisotropic version
---     {epsxxr, epsxxi}, {0, 0}, {0, 0},
--- 	{0, 0}, {epsxxr, epsxxi}, {0, 0},
--- 	{0, 0}, {0, 0}, {epsyyr, epsyyi}
--- 	})
-S:AddMaterial("PbTaSe2", {epsxxr, epsxxi}) -- isotropic version
-
 
 -- Structure definition
 S:AddLayer('AirAbove',  -- layer name
            0,           -- thickness
            'Vacuum')    -- background material
-
--- PC of Silicon ontop of PbTaSe2 flake
-S:AddLayer('PhC', d, 'Silicon')
+S:AddLayer('PhC', PhC_d, 'SiO2')
 S:SetLayerPatternCircle('PhC',   -- which layer to alter
                         'Vacuum', -- material in circle
 	                    {0,0},    -- center
 	                    r)      -- radius
-
--- PC of PbTaSe2 pillars ontop of PbTaSe2 flake
--- S:AddLayer('PhC', d, 'Vacuum')
--- S:SetLayerPatternCircle('PhC',   -- which layer to alter
---                         'PbTaSe2', -- material in circle
--- 	                    {0,0},    -- center
--- 	                    r)      -- radius
-
--- PC of holes in PbTaSe2 ontop of PbTaSe2 flake
--- S:AddLayer('PhC', d, 'PbTaSe2')
--- S:SetLayerPatternCircle('PhC',   -- which layer to alter
---                         'Vacuum', -- material in circle
--- 	                    {0,0},    -- center
--- 	                    r)      -- radius
-
-S:AddLayer('ActiveSlab', d_flake, 'PbTaSe2')
-
+S:AddLayer('Slab', slab_d, 'SiO2')
 -- If only on a SiO2 on Si wafer:
 S:AddLayer('SiO2', 0.3, 'SiO2') -- layer to copy
 S:AddLayer('SiWafer', 0, 'Silicon') -- layer to copy
-
 -- If on a perfect mirror
 -- S:AddLayer('MirrorBelow', 0, 'PerfMirror') -- layer to copy
+
 
 S:SetExcitationPlanewave(
 	{0,0}, -- incidence angles
@@ -111,15 +78,12 @@ local filen = generate_filename()
 local filename = "/home/mo/S4/morgan/" .. filen
 local file = io.open(filename, "w")
 
--- Write the header specifying the columns
--- file:write("freq\tforward\tbackward\n")
 
-for freq=0.3,3,0.05 do
+for freq=0.72,2.5,0.01 do
     S:SetFrequency(freq)
 	forward,backward = S:GetPoyntingFlux('AirAbove', 0)
-    -- fw1, bw1 = S:GetPoyntingFlux('ActiveSlab', 0)
-    fw1, bw1 = S:GetPoyntingFlux('PhC', 0)
-    fw2, bw2 = S:GetPoyntingFlux('ActiveSlab', d_flake)
+    fw1, bw1 = S:GetPoyntingFlux('Slab', 0)
+    fw2, bw2 = S:GetPoyntingFlux('Slab', slab_d)
     A = abs((fw2-fw1-(bw1-bw2))/forward)
 	-- print (freq .. '\t' .. backward .. '\t' .. A)
     file:write(string.format("%.6f\t%.6f\t%.6f\n", freq, -backward, A))
