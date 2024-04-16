@@ -45,7 +45,7 @@ epsyyi  = 11
 S = S4.NewSimulation()
 
 a = 0.6        -- 600 nm
-d = 0.050      -- 50 nm
+d_hole = 0.050      -- 50 nm
 r = 0.35*a     -- 0.35 a
 d_flake = 0.4  -- 400 nm
 
@@ -70,20 +70,27 @@ S:AddLayer('AirAbove',  -- layer name
            'Vacuum')    -- background material
 
 -- PC of holes in Silicon ontop of PbTaSe2 flake
--- S:AddLayer('PhC', d, 'Silicon')
+-- S:AddLayer('PhC', d_hole, 'Silicon')
 -- S:SetLayerPatternCircle('PhC',   -- which layer to alter
 --                         'Vacuum', -- material in circle
 -- 	                    {0,0},    -- center
 -- 	                    r)      -- radius
 
 -- PC of holes in PbTaSe2 ontop of PbTaSe2 flake
-S:AddLayer('PhC', d, 'PbTaSe2')
-S:SetLayerPatternCircle('PhC',   -- which layer to alter
-                        'Vacuum', -- material in circle
-	                    {0,0},    -- center
-	                    r)      -- radius
+-- S:AddLayer('PhC', d_hole, 'PbTaSe2')
+-- S:SetLayerPatternCircle('PhC',   -- which layer to alter
+--                         'Vacuum', -- material in circle
+-- 	                    {0,0},    -- center
+-- 	                    r)      -- radius
 
 S:AddLayer('ActiveSlab', d_flake, 'PbTaSe2')
+
+-- PC of holes in Silicon under the PbTaSe2 flake
+-- S:AddLayer('PhC', d_hole, 'Silicon')
+-- S:SetLayerPatternCircle('PhC',   -- which layer to alter
+--                         'Vacuum', -- material in circle
+-- 	                    {0,0},    -- center
+-- 	                    r)      -- radius
 
 -- If on a SiO2 on Si wafer:
 S:AddLayer('SiO2', 0.3, 'SiO2') -- layer to copy
@@ -112,8 +119,8 @@ local file = io.open(filename, "w")
 for freq=f0_start,f0_end,0.01 do
     S:SetFrequency(freq)
 	forward,backward = S:GetPoyntingFlux('AirAbove', 0)
-    -- fw1, bw1 = S:GetPoyntingFlux('ActiveSlab', 0)
-    fw1, bw1 = S:GetPoyntingFlux('PhC', 0)
+    fw1, bw1 = S:GetPoyntingFlux('ActiveSlab', 0)
+    -- fw1, bw1 = S:GetPoyntingFlux('PhC', 0)
     fw2, bw2 = S:GetPoyntingFlux('ActiveSlab', d_flake)
     A = abs((fw2-fw1-(bw1-bw2))/forward)
 	-- print (freq .. '\t' .. backward .. '\t' .. A)
