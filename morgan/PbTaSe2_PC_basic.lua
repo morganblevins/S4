@@ -77,13 +77,13 @@ S:AddLayer('AirAbove',  -- layer name
 -- 	                    r)      -- radius
 
 -- PC of holes in PbTaSe2 ontop of PbTaSe2 flake
--- S:AddLayer('PhC', d_hole, 'PbTaSe2')
--- S:SetLayerPatternCircle('PhC',   -- which layer to alter
---                         'Vacuum', -- material in circle
--- 	                    {0,0},    -- center
--- 	                    r)      -- radius
+S:AddLayer('PhC', d_hole, 'PbTaSe2')
+S:SetLayerPatternCircle('PhC',   -- which layer to alter
+                        'Vacuum', -- material in circle
+	                    {0,0},    -- center
+	                    r)      -- radius
 
-S:AddLayer('ActiveSlab', d_flake, 'PbTaSe2')
+S:AddLayer('ActiveSlab', d_flake-d_hole, 'PbTaSe2')
 
 -- PC of holes in Silicon under the PbTaSe2 flake
 -- S:AddLayer('PhC', d_hole, 'Silicon')
@@ -119,9 +119,10 @@ local file = io.open(filename, "w")
 for freq=f0_start,f0_end,0.01 do
     S:SetFrequency(freq)
 	forward,backward = S:GetPoyntingFlux('AirAbove', 0)
-    fw1, bw1 = S:GetPoyntingFlux('ActiveSlab', 0)
+    -- fw1, bw1 = S:GetPoyntingFlux('ActiveSlab', 0)
     -- fw1, bw1 = S:GetPoyntingFlux('PhC', 0)
-    fw2, bw2 = S:GetPoyntingFlux('ActiveSlab', d_flake)
+    fw1, bw1 = S:GetPoyntingFlux('PhC', 0)
+    fw2, bw2 = S:GetPoyntingFlux('ActiveSlab', d_flake-d_hole)
     A = abs((fw2-fw1-(bw1-bw2))/forward)
 	-- print (freq .. '\t' .. backward .. '\t' .. A)
     file:write(string.format("%.6f\t%.6f\t%.6f\n", freq, -backward, A))

@@ -84,18 +84,19 @@ r = 0.17*a     -- 0.17 a
 r = 0.32*a     -- 0.30 a
 d_flake = 0.400 -- 400 nm
 
-local a = {0.2, 0.25, 0.35, 0.4, 0.45, 0.5, 0.55, 0.60, 0.65, 0.7, 0.75 , 0.8, 0.85, 0.9, 0.95, 1, 1.05, 1.1}
+local a = {0.2, 0.25, 0.35, 0.4, 0.45, 0.5, 0.55, 0.60}
 local r_factor = {0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4}
-local d_hole = {0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09}
+-- local d_hole = {0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09}
+local d_hole = 0.02
 -- d = 0.03
 d_flake = 0.4
 mt = {}
 for i = 1, #a do
 	S:SetLattice({a[i],0}, {0,a[i]})
 	mt[i]={}
-	for j=1, #d_hole do
-        -- r = r_factor[j]*a[i] 
-        r = 0.35*a[i]
+	for j=1, #r_factor do
+        r = r_factor[j]*a[i] 
+        -- r = 0.35*a[i]
 		abs_int = 0
 		-- for freq=f0_start,f0_end,0.01 do
 		freq=f0_start do
@@ -111,9 +112,9 @@ for i = 1, #a do
                 S:AddMaterial("PbTaSe2", {epsxxr, epsxxi}) -- isotropic version
                 -- Structure definition
                 S:AddLayer('AirAbove',0,'Vacuum')
-                S:SetLayer('PhC', d_hole[j], 'PbTaSe2')
+                S:SetLayer('PhC', d_hole, 'PbTaSe2')
                 S:SetLayerPatternCircle('PhC','Vacuum',{0,0},r)
-                S:AddLayer('ActiveSlab', d_flake-d_hole[j], 'PbTaSe2')
+                S:AddLayer('ActiveSlab', d_flake-d_hole, 'PbTaSe2')
                 S:AddLayer('SiO2', 0.3, 'SiO2') -- layer to copy
                 S:AddLayer('SiWafer', 0, 'Silicon') -- layer to copy        
 				S:SetExcitationPlanewave(
@@ -123,15 +124,15 @@ for i = 1, #a do
 				S:SetFrequency(freq)
                 forward,backward = S:GetPoyntingFlux('AirAbove', 0)
                 fw1, bw1 = S:GetPoyntingFlux('PhC', 0)
-                fw2, bw2 = S:GetPoyntingFlux('ActiveSlab', d_flake-d_hole[j])
+                fw2, bw2 = S:GetPoyntingFlux('ActiveSlab', d_flake-d_hole)
                 A = abs((fw2-fw1-(bw1-bw2))/forward)
-                print (freq .. '\t' .. backward .. '\t' .. A)
+                -- print (freq .. '\t' .. backward .. '\t' .. A)
                 -- file:write(string.format("%.6f\t%.6f\t%.6f\n", freq, -backward, A))
                 abs_int = abs_int + A
 			end
 		end
-		-- print (a[i] .. '\t' .. r_factor[j] .. '\t' .. abs_int )
-		print (a[i] .. '\t' .. d_hole[j] .. '\t' .. abs_int )
+		print (a[i] .. '\t' .. r_factor[j] .. '\t' .. abs_int )
+		-- print (a[i] .. '\t' .. d_hole[j] .. '\t' .. abs_int )
         mt[i][j]= abs_int
 	end
 end
@@ -142,8 +143,8 @@ local filename = "/home/mo/S4/morgan/" .. filen
 local file = io.open(filename, "w")
 
 -- Save matrix with labels to file
--- saveMatrixWithLabelsToFile(mt, a, r_factor, filename)
-saveMatrixWithLabelsToFile(mt, a, d_hole, filename)
+saveMatrixWithLabelsToFile(mt, a, r_factor, filename)
+-- saveMatrixWithLabelsToFile(mt, a, d_hole, filename)
 
 file:close()
 
