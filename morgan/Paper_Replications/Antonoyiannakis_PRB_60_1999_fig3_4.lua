@@ -5,7 +5,7 @@
 
 S = S4.NewSimulation()
 S:SetLattice({1,0}, {0,1})
-S:SetNumG(1)
+S:SetNumG(10)
 S:AddMaterial('Al', {1,0}) -- real and imag parts
 S:AddMaterial('Vacuum', {1,0})
 
@@ -27,7 +27,14 @@ for f=1,25,0.2 do
 	-- eps = 1 - f_p^2(f - i*gamma)/(f*(f^2 + gamma^2))
 	epsr = 1 - f_p*f_p/(f*f + gamma*gamma)
 	epsi = f_p*f_p/(f*f + gamma*gamma) * gamma/f
-	S:SetMaterial('Al', {epsr,epsi});
+	-- S:SetMaterial('Al', {epsr,epsi});
+
+	-- as an anisotropic
+	S:SetMaterial("Al", {
+        {epsr,epsi}, {0, 0}, {0, 0},
+        {0, 0}, {epsr,epsi}, {0, 0},
+        {0, 0}, {0, 0}, {epsr,epsi}
+        })
 	
 	-- Reflected power
 	-- forward,reflected = S:GetPoyntingFlux('Above', 0)

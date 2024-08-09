@@ -60,10 +60,11 @@ if not complex then
     error("Failed to load the complex module.")
 end
 
-I = complex.new(0,1)
 
 -- Cd3As2 parameters via my manuscript
 local complex = require("complex")
+
+I = complex.new(0,1)
 
 -- Define constants
 local hbar    = 1.05457e-34 -- Reduced Planck's constant [J*s].
@@ -95,7 +96,7 @@ print("Generated filename:", filename)
 
 S = S4.NewSimulation()
 S:SetLattice({1,0}, {0,1})
-S:SetNumG(10)
+S:SetNumG(5)
 
 S:AddMaterial("Cd3As2", {1,0})
 S:AddMaterial('Vacuum', {1,0})
@@ -103,11 +104,6 @@ S:AddMaterial('Vacuum', {1,0})
 S:AddLayer('Above', 0 , 'Vacuum')
 S:AddLayer('Dummy', 1 , 'Vacuum')
 S:AddLayer('Below', 0, "Cd3As2")
-
--- S:SetExcitationPlanewave(
--- 	{70,0}, -- incidence angles
--- 	{0,0}, -- s-polarization amplitude and phase (in degrees)
--- 	{1,0}) -- p-polarization amplitude and phase
 
 theta = 60
 
@@ -149,20 +145,21 @@ for freq=0.0150,0.1000,0.001 do
     xx_i = complex.imag(eps_d0)
 
     S:SetFrequency(freq)
+
     -- S:SetMaterial('Cd3As2', {xx_r, xx_i})
+    print('eps_re = '.. xx_r .. ', eps_im = ' .. xx_i)
+
     S:SetMaterial("Cd3As2", {
         {xx_r, xx_i}, {0, 0}, {0, 0},
         {0, 0}, {xx_r, xx_i}, {0, 0},
         {0, 0}, {0, 0}, {xx_r, xx_i}
         })
 
+	-- Reflected power
     forward,reflected = S:GetPoyntingFlux('Dummy', 1)
 	reflected = -reflected/forward
-	T1x,T1y,T1z = S:GetStressTensorIntegral('Above', 0)
+	T1x,T1y,T1z = S:GetStressTensorIntegral('Above', 1)
 	T2x,T2y,T2z = S:GetStressTensorIntegral('Below', 0)
-
-
-	-- Reflected power
 
     -- print(reflected)
     print (f .. '\t' .. reflected .. '\t' .. -T1z .. '\t' .. T2z)
