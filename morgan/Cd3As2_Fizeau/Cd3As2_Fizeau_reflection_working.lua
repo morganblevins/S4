@@ -83,7 +83,7 @@ local k_F     = E_F / (v_F * hbar) -- Fermi momentum
 local Tau     = tau * E_F / hbar   -- Dimensionless scattering period [1].
 
 -- Fizeau drag parameters
-local vFactor = 0
+local vFactor = 0.6
 local vd      = vFactor * v_F            -- current drift velocity
 local gamma   = math.sqrt(1 - vd^2 / v_F^2)^(-1) -- QLT transform parameter
 
@@ -118,10 +118,9 @@ S:AddLayer('Below', 0, "Cd3As2")
 theta = 60
 
 S:SetExcitationPlanewave(
-	{theta, theta}, -- incidence angles
-	{1,0}, -- s-polarization amplitude and phase (in degrees)
-	{0,0}) -- p-polarization amplitude and phase
-
+	{theta, 90}, -- incidence angles -- phi in [0,180), theta in [0,360)
+	{0,0}, -- s-polarization amplitude and phase (in degrees)
+	{1,0}) -- p-polarization amplitude and phase
 
 for freq=0.0150,0.1000,0.001 do
     -- Define frequency
@@ -168,17 +167,17 @@ for freq=0.0150,0.1000,0.001 do
     -- Isotropic:
     -- S:SetMaterial('Cd3As2', {xx_0r, xx_0i})
     -- Isotropic w/ matrix form:
-    S:SetMaterial("Cd3As2", {
-        {xx_0r, xx_0i}, {0, 0}, {0, 0},
-        {0, 0}, {xx_0r, xx_0i}, {0, 0},
-        {0, 0}, {0, 0}, {xx_0r, xx_0i}
-        })
-    -- Anisotropic:
     -- S:SetMaterial("Cd3As2", {
-    --     {xx_dr, xx_di}, {0, 0}, {0, 0},
+    --     {xx_0r, xx_0i}, {0, 0}, {0, 0},
     --     {0, 0}, {xx_0r, xx_0i}, {0, 0},
     --     {0, 0}, {0, 0}, {xx_0r, xx_0i}
     --     })
+    -- Anisotropic:
+    S:SetMaterial("Cd3As2", {
+        {xx_dr, xx_di}, {0, 0}, {0, 0},
+        {0, 0}, {xx_0r, xx_0i}, {0, 0},
+        {0, 0}, {0, 0}, {xx_0r, xx_0i}
+        })
 
 	-- Reflected power
     forward,reflected = S:GetPoyntingFlux('Dummy', 1)
