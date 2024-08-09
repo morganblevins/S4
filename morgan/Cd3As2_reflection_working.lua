@@ -159,7 +159,7 @@ for freq=0.0150,0.1000,0.001 do
     -- Define freq, momentum, loss parameters (dimensionless)
     Omega = omega * hbar / E_F    -- Dimensionless frequency [1].      
     Q     = Q_k_F   -- Dimensionless wave vector [1].  
-    print('Omega = ' .. Omega .. ', Q=' .. Q)
+    -- print('Omega = ' .. Omega .. ', Q=' .. Q)
 
     -- Solve for conductivity, sigma(q,omega):
     -- sigma for NO current bias 
@@ -181,16 +181,16 @@ for freq=0.0150,0.1000,0.001 do
     -- xx_i = 1
     -- local formatted_result = string.format("%.10f", A)
     -- A = math.floor(A)
-    print('A = ' .. A)
+    -- print('A = ' .. A)
     -- print(math.log(complex.real((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) ))
-    print(A_1)
-    print(log_real+log_imag)
-    print(log_imag)
+    -- print(A_1)
+    -- print(log_real+log_imag)
+    -- print(log_imag)
     -- print('A = ' .. A)
     -- print('sigma = ' .. sigma_0)
     -- print( (Omega / (Q^2)) * (((Omega + (I / Tau)) * A) / (Omega - (I / Tau) * A)))
     -- print(math.atan(complex.imag((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) , complex.real((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) ))
-    print('eps =' .. xx_r .. ' + ' .. xx_i .. 'i')
+    -- print('eps =' .. xx_r .. ' + ' .. xx_i .. 'i')
 
     S:SetFrequency(freq)
     S:SetMaterial('Cd3As2', {xx_r, xx_i})
