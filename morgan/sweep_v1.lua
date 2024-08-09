@@ -16,7 +16,6 @@ function generate_filename()
     return filename
 end
 
-
 -- Function to save matrix with labels to a .txt file
 function saveMatrixWithLabelsToFile(matrix, xLabels, yLabels, filename)
     local file = io.open(filename, "w") -- Open file for writing
@@ -59,13 +58,13 @@ end
 
 c_const = 3e8
 unit = 1e-6
-lbda_end   = 0.635e-6 -- say we compute at 1µm wavelength
-lbda_start = 0.615e-6 -- say we compute at 1µm wavelength
+lbda_end   = 0.8e-6 -- say we compute at 1µm wavelength
+lbda_start = 0.625e-6 -- say we compute at 1µm wavelength
 f_start = c_const/lbda_end -- ferquency in SI units
 f_end = c_const/lbda_start -- ferquency in SI units
 f0_start = f_start/c_const*unit -- so the reduced frequency is f/c_const*a[SI units]
 f0_end = f_end/c_const*unit -- so the reduced frequency is f/c_const*a[SI units]
-print (f0_start .. '\t' .. f0_end )
+-- print (f0_start .. '\t' .. f0_end )
 
 -- PbTaSe2 parameters via 
 -- "DFT based investigation of bulk mechanical, thermophysical and optoelectronic 
@@ -77,23 +76,32 @@ epsyyi  = 11
 
 S = S4.NewSimulation()
 
-local a = {0.4, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.5, 0.51, 0.52, 0.53, 0.54, 0.55, 0.56, 0.57, 0.58, 0.59, 0.6, 0.61, 0.62, 0.63, 0.64, 0.65}
-local a = {0.5, 0.52, 0.54, 0.56, 0.58, 0.6, 0.62, 0.64, 0.66}
-local r_factor = {0.32, 0.33, 0.34, 0.35, 0.36, 0.37, 0.38, 0.39, 0.4}
-local d_hole = 0.020 -- 20 nm
-local d_flake = 0.4 -- 400 nm
+a = 0.55 -- 900 nm
+S:SetLattice({a,0}, {0,a})
+S:SetNumG(100)
+d = 0.090      -- 90 nm
+r = 0.17*a     -- 0.17 a
+r = 0.32*a     -- 0.30 a
+d_flake = 0.400 -- 400 nm
+
+local a = {0.2, 0.25, 0.35, 0.4, 0.45, 0.5, 0.55, 0.60, 0.65, 0.7, 0.75 , 0.8, 0.85, 0.9, 0.95, 1, 1.05, 1.1}
+local r_factor = {0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4}
+local d_hole = {0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09}
+d_hole = 0.02
+d_flake = 0.4
 mt = {}
-local abs_int = 0
 for i = 1, #a do
 	S:SetLattice({a[i],0}, {0,a[i]})
 	mt[i]={}
 	for j=1, #r_factor do
         r = r_factor[j]*a[i] 
+        -- r = 0.35*a[i]
 		abs_int = 0
-		for freq=f0_start,f0_end,0.03 do
-		-- freq=f0_start do
-			-- for theta=0, 30, 10 do
-			theta=0 do
+		-- for freq=f0_start,f0_end,0.01 do
+		freq=f0_end do
+        -- d_flake = d_f - d[j]
+			for theta=0, 30, 10 do
+			-- theta=0 do
                 S = S4.NewSimulation()
                 S:SetLattice({a[i],0}, {0,a[i]})
                 S:SetNumG(100)
@@ -103,7 +111,7 @@ for i = 1, #a do
                 S:AddMaterial("PbTaSe2", {epsxxr, epsxxi}) -- isotropic version
                 -- Structure definition
                 S:AddLayer('AirAbove',0,'Vacuum')
-                S:AddLayer('PhC', d_hole, 'PbTaSe2')
+                S:SetLayer('PhC', d_hole, 'PbTaSe2')
                 S:SetLayerPatternCircle('PhC','Vacuum',{0,0},r)
                 S:AddLayer('ActiveSlab', d_flake-d_hole, 'PbTaSe2')
                 S:AddLayer('SiO2', 0.3, 'SiO2') -- layer to copy
@@ -117,12 +125,12 @@ for i = 1, #a do
                 fw1, bw1 = S:GetPoyntingFlux('PhC', 0)
                 fw2, bw2 = S:GetPoyntingFlux('ActiveSlab', d_flake-d_hole)
                 A = abs((fw2-fw1-(bw1-bw2))/forward)
-                -- print (freq .. '\t' .. backward .. '\t' .. A)
+                print (freq .. '\t' .. backward .. '\t' .. A)
                 -- file:write(string.format("%.6f\t%.6f\t%.6f\n", freq, -backward, A))
                 abs_int = abs_int + A
 			end
 		end
-		-- print (a[i] .. '\t' .. r_factor[j] .. '\t' .. abs_int )
+		print (a[i] .. '\t' .. r_factor[j] .. '\t' .. abs_int )
 		-- print (a[i] .. '\t' .. d_hole[j] .. '\t' .. abs_int )
         mt[i][j]= abs_int
 	end
@@ -135,13 +143,12 @@ local file = io.open(filename, "w")
 
 -- Save matrix with labels to file
 saveMatrixWithLabelsToFile(mt, a, r_factor, filename)
--- saveMatrixWithLabelsToFile(mt, a, d_hole, filename)
+saveMatrixWithLabelsToFile(mt, a, d_hole, filename)
 
 file:close()
 
 -- Define the Python script file name
 local pythonScript = "morgan/plotHeatmap_matrix_with_labels.py"
-local pythonScript = "morgan/heatmap.py"
 
 -- Execute the Python script using os.execute
 local command = "python3 " .. pythonScript .. " " .. filename

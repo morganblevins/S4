@@ -26,13 +26,13 @@ end
 
 c_const = 3e8
 unit = 1e-6
-lbda_end   = 0.8e-6 -- say we compute at 1µm wavelength
-lbda_start = 0.4e-6 -- say we compute at 1µm wavelength
+lbda_end   = 0.7e-6 -- say we compute at 1µm wavelength
+lbda_start = 0.5e-6 -- say we compute at 1µm wavelength
 f_start = c_const/lbda_end -- ferquency in SI units
 f_end = c_const/lbda_start -- ferquency in SI units
 f0_start = f_start/c_const*unit -- so the reduced frequency is f/c_const*a[SI units]
 f0_end = f_end/c_const*unit -- so the reduced frequency is f/c_const*a[SI units]
--- print (f0_start .. '\t' .. f0_end )
+print (f0_start .. '\t' .. f0_end )
 
 -- PbTaSe2 parameters via 
 -- "DFT based investigation of bulk mechanical, thermophysical and optoelectronic 
@@ -44,10 +44,16 @@ epsyyi  = 11
 
 S = S4.NewSimulation()
 
-a = 0.6        -- 600 nm
-d_hole = 0.050      -- 50 nm
-r = 0.35*a     -- 0.35 a
-d_flake = 0.4  -- 400 nm
+a = 0.600       -- Pitch 520 nm
+d_hole = 0.020  -- 20 nm
+r = 0.35*a      -- 0.35 a
+d_flake = 0.400 -- 400 nm
+
+-- a = 0.4       -- Pitch 520 nm
+-- d_hole = 0.020  -- 20 nm
+-- r = 0.35*a      -- 0.35 a
+-- d_flake = 0.400 -- 400 nm
+theta= 0       -- incident angle
 
 S:SetLattice({a,0}, {0,a})
 S:SetNumG(100)
@@ -56,35 +62,24 @@ S:AddMaterial("Silicon", {12.1,0})
 S:AddMaterial("SiO2", {1.45,0}) 
 S:AddMaterial("Vacuum", {1,0})
 S:AddMaterial("PerfMirror", {-1.0e10,0})
--- S:AddMaterial("PbTaSe2", {  -- anisotropic version
---     {epsxxr, epsxxi}, {0, 0}, {0, 0},
--- 	{0, 0}, {epsxxr, epsxxi}, {0, 0},
--- 	{0, 0}, {0, 0}, {epsyyr, epsyyi}
--- 	})
 S:AddMaterial("PbTaSe2", {epsxxr, epsxxi}) -- isotropic version
-
 
 -- Structure definition
 S:AddLayer('AirAbove',  -- layer name
            0,           -- thickness
            'Vacuum')    -- background material
-
--- PC of holes in Silicon ontop of PbTaSe2 flake
--- S:AddLayer('PhC', d_hole, 'Silicon')
--- S:SetLayerPatternCircle('PhC',   -- which layer to alter
---                         'Vacuum', -- material in circle
--- 	                    {0,0},    -- center
--- 	                    r)      -- radius
-
--- PC of holes in PbTaSe2 ontop of PbTaSe2 flake
 S:AddLayer('PhC', d_hole, 'PbTaSe2')
 S:SetLayerPatternCircle('PhC',   -- which layer to alter
                         'Vacuum', -- material in circle
 	                    {0,0},    -- center
 	                    r)      -- radius
-
 S:AddLayer('ActiveSlab', d_flake-d_hole, 'PbTaSe2')
+-- If on a SiO2 on Si wafer:
+S:AddLayer('SiO2', 0.3, 'SiO2') -- layer to copy
+S:AddLayer('SiWafer', 0, 'Silicon') -- layer to copy
 
+-- If on a perfect mirror
+-- S:AddLayer('MirrorBelow', 0, 'PerfMirror')
 -- PC of holes in Silicon under the PbTaSe2 flake
 -- S:AddLayer('PhC', d_hole, 'Silicon')
 -- S:SetLayerPatternCircle('PhC',   -- which layer to alter
@@ -92,15 +87,8 @@ S:AddLayer('ActiveSlab', d_flake-d_hole, 'PbTaSe2')
 -- 	                    {0,0},    -- center
 -- 	                    r)      -- radius
 
--- If on a SiO2 on Si wafer:
-S:AddLayer('SiO2', 0.3, 'SiO2') -- layer to copy
-S:AddLayer('SiWafer', 0, 'Silicon') -- layer to copy
-
--- If on a perfect mirror
--- S:AddLayer('MirrorBelow', 0, 'PerfMirror')
-
 S:SetExcitationPlanewave(
-	{0,0}, -- incidence angles
+	{theta,0}, -- incidence angles
 	{0,0}, -- s-polarization amplitude and phase (in degrees)
 	{1,0}) -- p-polarization amplitude and phase
 
@@ -123,6 +111,7 @@ for freq=f0_start,f0_end,0.01 do
     -- fw1, bw1 = S:GetPoyntingFlux('PhC', 0)
     fw1, bw1 = S:GetPoyntingFlux('PhC', 0)
     fw2, bw2 = S:GetPoyntingFlux('ActiveSlab', d_flake-d_hole)
+    -- fw2, bw2 = S:GetPoyntingFlux('SiO2', 0)
     A = abs((fw2-fw1-(bw1-bw2))/forward)
 	-- print (freq .. '\t' .. backward .. '\t' .. A)
     file:write(string.format("%.6f\t%.6f\t%.6f\n", freq, -backward, A))
