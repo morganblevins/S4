@@ -69,7 +69,7 @@ local filen = generate_filename()
 local filename = "/home/mo/S4/morgan/" .. filen
 local file = io.open(filename, "w")
 
-for freq=0.72,0.9,0.001 do
+for freq=0.72,0.9,0.01 do
     S:SetFrequency(freq)
 	forward,backward = S:GetPoyntingFlux('AirAbove', 0)
     fw1, bw1 = S:GetPoyntingFlux('Graphene', 0)
