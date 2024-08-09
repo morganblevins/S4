@@ -83,7 +83,7 @@ local k_F     = E_F / (v_F * hbar) -- Fermi momentum
 local Tau     = tau * E_F / hbar   -- Dimensionless scattering period [1].
 
 -- Fizeau drag parameters
-local vFactor = 0.5
+local vFactor = 0
 local vd      = vFactor * v_F            -- current drift velocity
 local gamma   = math.sqrt(1 - vd^2 / v_F^2)^(-1) -- QLT transform parameter
 
@@ -95,6 +95,16 @@ local file = io.open(filename, "w")
 print("Generated filename:", filename)
 
 S = S4.NewSimulation()
+
+-- S:UseNormalVectorBasis()
+-- S:UseSubpixelSmoothing()
+-- S:UseDiscretizedEpsilon()
+-- S:UsePolarizationDecomposition()
+-- S:UseNormalVectorBasis()
+-- S:UseNormalVectorBasis(no)
+-- S:SetResolution(4)
+-- S:SetLatticeTruncation('Circular')
+
 S:SetLattice({1,0}, {0,1})
 S:SetNumG(5)
 
@@ -108,16 +118,14 @@ S:AddLayer('Below', 0, "Cd3As2")
 theta = 60
 
 S:SetExcitationPlanewave(
-	{theta,0}, -- incidence angles
-	{0,0}, -- s-polarization amplitude and phase (in degrees)
-	{1,0}) -- p-polarization amplitude and phase
+	{theta, theta}, -- incidence angles
+	{1,0}, -- s-polarization amplitude and phase (in degrees)
+	{0,0}) -- p-polarization amplitude and phase
 
 
 for freq=0.0150,0.1000,0.001 do
--- for freq=f0_start,f_0end,0.05 do
--- for freq=f0_start,f0_end,0.03 do
-    f = freq -- using units of f [eV]
     -- Define frequency
+    f = freq -- using units of [eV]
     E = f*eV -- [J]
     E_E_F = E / E_F --[nondimensionallized in E_F]
     omega = E/hbar --[1/s]
@@ -128,32 +136,49 @@ for freq=0.0150,0.1000,0.001 do
     -- Define freq, momentum, loss parameters (dimensionless)
     Omega = omega * hbar / E_F    -- Dimensionless frequency [1].      
     Q     = Q_k_F   -- Dimensionless wave vector [1].  
+    Omega_d = (gamma*(omega-vd*q))*hbar/E_F;    -- Dimensionless frequency [1].      
+    Q_d     = gamma*(q-(vd/v_F^2)*omega)/k_F   -- Dimensionless wave vector [1].  
     -- print('Omega = ' .. Omega .. ', Q=' .. Q)
 
     -- Solve for conductivity, sigma(q,omega):
     -- sigma for NO current bias 
-    A_1 = ((Omega + (I/Tau)) / (Q*2))
     log_real = math.log(complex.real((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) )
     log_imag = math.atan2(complex.imag((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) , complex.real((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) ) * I
     A = ((Omega + (I/Tau)) / (Q*2))*(log_real+log_imag) - 1
     sigma_0 = ((I * g * eV^2 * k_F) / (2 * math.pi^2 * hbar)) * (Omega / (Q^2)) * (((Omega + (I / Tau)) * A) / (Omega - (I / Tau) * A))
+    
+    -- with current bias 
+    log_real_b = math.log(complex.real((Omega_d + (I/Tau) + Q_d) / (Omega_d + (I/Tau) - Q_d)) )
+    log_imag_b = math.atan2(complex.imag((Omega_d + (I/Tau) + Q_d) / (Omega_d + (I/Tau) - Q_d)) , complex.real((Omega_d + (I/Tau) + Q_d) / (Omega_d + (I/Tau) - Q_d)) ) * I
+    B = ((Omega_d + (I/Tau)) / (Q_d*2))*(log_real_b+log_imag_b) - 1
+    sigma_d = (gamma^(-2/3))*( Omega/Omega_d)*((I * g * eV^2 * k_F) / (2 * math.pi^2 * hbar)) * (Omega_d / (Q_d^2)) * (((Omega_d + (I / Tau)) * B) / (Omega_d - (I / Tau) * B))
 
     -- Solve for permittivity, epsilon(q,omega), from conductivity 
     eps_d0 = eps_inf + (I*(sigma_0*hbar) / (eps_0*E))    -- NO current bias
+    eps_d = eps_inf + (I*(sigma_d*hbar) / (eps_0*E))    -- WITH current bias
 
-    xx_r = complex.real(eps_d0)
-    xx_i = complex.imag(eps_d0)
+    xx_0r = complex.real(eps_d0)
+    xx_0i = complex.imag(eps_d0)
+    xx_dr = complex.real(eps_d)
+    xx_di = complex.imag(eps_d)
 
+    -- print('eps_re = '.. xx_r .. ', eps_im = ' .. xx_i)
+    
     S:SetFrequency(freq)
-
-    -- S:SetMaterial('Cd3As2', {xx_r, xx_i})
-    print('eps_re = '.. xx_r .. ', eps_im = ' .. xx_i)
-
+    -- Isotropic:
+    -- S:SetMaterial('Cd3As2', {xx_0r, xx_0i})
+    -- Isotropic w/ matrix form:
     S:SetMaterial("Cd3As2", {
-        {xx_r, xx_i}, {0, 0}, {0, 0},
-        {0, 0}, {xx_r, xx_i}, {0, 0},
-        {0, 0}, {0, 0}, {xx_r, xx_i}
+        {xx_0r, xx_0i}, {0, 0}, {0, 0},
+        {0, 0}, {xx_0r, xx_0i}, {0, 0},
+        {0, 0}, {0, 0}, {xx_0r, xx_0i}
         })
+    -- Anisotropic:
+    -- S:SetMaterial("Cd3As2", {
+    --     {xx_dr, xx_di}, {0, 0}, {0, 0},
+    --     {0, 0}, {xx_0r, xx_0i}, {0, 0},
+    --     {0, 0}, {0, 0}, {xx_0r, xx_0i}
+    --     })
 
 	-- Reflected power
     forward,reflected = S:GetPoyntingFlux('Dummy', 1)
@@ -163,6 +188,7 @@ for freq=0.0150,0.1000,0.001 do
 
     -- print(reflected)
     print (f .. '\t' .. reflected .. '\t' .. -T1z .. '\t' .. T2z)
+    -- file:write(string.format("%.6f\t%.6f\t%.6f\n", freq, reflected, T2z))
     file:write(string.format("%.6f\t%.6f\n", freq, reflected))
     io.stdout:flush()
 end
