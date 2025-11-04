@@ -27,15 +27,36 @@ end
 
 S = S4.NewSimulation()
 
-a = 0.9 -- 900 nm
+a = 0.9 -- 900 nm, base unit 1 um
 S:SetLattice({a,0}, {0,a})
 S:SetNumG(100)
+
+c_const = 3e8
+base_unit = 1e-6
+
+lbda_end   = 1.613 -- um
+-- lbda_end   = 2e -- um
+lbda_start = 1.388 -- um
+lbda_start = 1 -- um
+f0_start = 1/lbda_end -- 0.62 1/um
+f0_end   = 1/lbda_start -- 0.72 1/um
+
+print (f0_start .. '\t' .. f0_end )
+-- Graphene:
+n = 3
+k = 5.446*1.6/3
+epsxxr  = n*n - k*k -- 13.8566
+epsxxi  = 2*n*k -- 17.2268
+
+-- f0_start = 0.62
+-- f0_end   = 0.72
+
 
 S:AddMaterial("Silicon", {12.1,0}) 
 S:AddMaterial("SiO2", {1.45,0}) 
 S:AddMaterial("Vacuum", {1,0})
 S:AddMaterial("PerfMirror", {-1.0e10,0})
-S:AddMaterial("Graphene", {5,7})
+S:AddMaterial("Graphene", {epsxxr,epsxxi})
 
 t_g = 0.00034  -- 0.34 nm
 d = 0.090      -- 90 nm
@@ -51,11 +72,13 @@ S:SetLayerPatternCircle('Slab',   -- which layer to alter
                         'Vacuum', -- material in circle
 	                    {0,0},    -- center
 	                    r)      -- radius
+
 -- If only on a SiO2 on Si wafer:
-S:AddLayer('SiO2', 0.3, 'SiO2') -- layer to copy
-S:AddLayer('SiWafer', 0, 'Silicon') -- layer to copy
+-- S:AddLayer('SiO2', 0.3, 'SiO2') -- layer to copy
+-- S:AddLayer('SiWafer', 0, 'Silicon') -- layer to copy
+
 -- If on a perfect mirror
--- S:AddLayer('MirrorBelow', 0, 'PerfMirror') -- layer to copy
+S:AddLayer('MirrorBelow', 0, 'PerfMirror') -- layer to copy
 
 S:SetExcitationPlanewave(
 	{0,0}, -- incidence angles
@@ -69,7 +92,8 @@ local filen = generate_filename()
 local filename = "/home/mo/S4/morgan/" .. filen
 local file = io.open(filename, "w")
 
-for freq=0.72,0.9,0.01 do
+-- for freq=0.72,0.9,0.005 do
+for freq=f0_start,f0_end,0.01 do
     S:SetFrequency(freq)
 	forward,backward = S:GetPoyntingFlux('AirAbove', 0)
     fw1, bw1 = S:GetPoyntingFlux('Graphene', 0)

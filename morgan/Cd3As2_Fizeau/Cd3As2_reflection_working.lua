@@ -96,7 +96,7 @@ local k_F     = E_F / (v_F * hbar) -- Fermi momentum
 local Tau     = tau * E_F / hbar   -- Dimensionless scattering period [1].
 
 -- Fizeau drag parameters
-local vFactor = 0.5
+local vFactor = 0
 local vd      = vFactor * v_F            -- current drift velocity
 local gamma   = math.sqrt(1 - vd^2 / v_F^2)^(-1) -- QLT transform parameter
 
@@ -164,12 +164,10 @@ for freq=0.0150,0.1000,0.001 do
     -- Solve for conductivity, sigma(q,omega):
     -- sigma for NO current bias 
     A_1 = ((Omega + (I/Tau)) / (Q*2))
-    log_real = math.log(complex.real((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) )
+    -- -- log(abs(z)) + 1i*angle(z) 
+    log_real = math.log(complex.abs((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) )
     log_imag = math.atan2(complex.imag((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) , complex.real((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) ) * I
-    -- A = complex.mulnum(A_1,A_2) - 1
-    -- A = complex.mul((Omega + (I/Tau)) / (Q*2), (log_real+log_imag)) - 1
     A = ((Omega + (I/Tau)) / (Q*2))*(log_real+log_imag) - 1
-    -- A =  (((Omega + (I/Tau)) / (Q*2)) * math.log(complex.real((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) )) - 1
     sigma_0 = ((I * g * eV^2 * k_F) / (2 * math.pi^2 * hbar)) * (Omega / (Q^2)) * (((Omega + (I / Tau)) * A) / (Omega - (I / Tau) * A))
 
     -- Solve for permittivity, epsilon(q,omega), from conductivity 
@@ -177,19 +175,8 @@ for freq=0.0150,0.1000,0.001 do
 
     xx_r = complex.real(eps_d0)
     xx_i = complex.imag(eps_d0)
-    -- xx_r = 13
-    -- xx_i = 1
-    -- local formatted_result = string.format("%.10f", A)
-    -- A = math.floor(A)
-    -- print('A = ' .. A)
-    -- print(math.log(complex.real((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) ))
-    -- print(A_1)
-    -- print(log_real+log_imag)
-    -- print(log_imag)
-    -- print('A = ' .. A)
-    -- print('sigma = ' .. sigma_0)
-    -- print( (Omega / (Q^2)) * (((Omega + (I / Tau)) * A) / (Omega - (I / Tau) * A)))
-    -- print(math.atan(complex.imag((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) , complex.real((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) ))
+    sig_0r = complex.real(sigma_0)
+    sig_0i = complex.imag(sigma_0)
     -- print('eps =' .. xx_r .. ' + ' .. xx_i .. 'i')
 
     S:SetFrequency(freq)
@@ -205,9 +192,9 @@ for freq=0.0150,0.1000,0.001 do
     --     {0, 0}, {0, 0}, {xx_r, xx_i}
     --     })
 	-- Reflected power
-
     -- print(reflected)
     print (f .. '\t' .. reflected .. '\t' .. -T1z .. '\t' .. T2z)
+    -- file:write(string.format("%.6f\t%.6f\t%.6f\t%.6f\t%.6f\n", freq, xx_r, xx_i, sig_0r , sig_0i ))
     file:write(string.format("%.6f\t%.6f\n", freq, reflected))
     io.stdout:flush()
 end

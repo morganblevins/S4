@@ -118,11 +118,11 @@ S:AddLayer('Below', 0, "Cd3As2")
 theta = 60
 
 S:SetExcitationPlanewave(
-	{theta, 90}, -- incidence angles -- phi in [0,180), theta in [0,360)
+	{theta, 360}, -- incidence angles -- phi in [0,180), theta in [0,360)
 	{0,0}, -- s-polarization amplitude and phase (in degrees)
 	{1,0}) -- p-polarization amplitude and phase
 
-for freq=0.0150,0.1000,0.001 do
+for freq=0.0150,0.1000,0.0001 do
     -- Define frequency
     f = freq -- using units of [eV]
     E = f*eV -- [J]
@@ -141,13 +141,13 @@ for freq=0.0150,0.1000,0.001 do
 
     -- Solve for conductivity, sigma(q,omega):
     -- sigma for NO current bias 
-    log_real = math.log(complex.real((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) )
+    log_real = math.log(complex.abs((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) )
     log_imag = math.atan2(complex.imag((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) , complex.real((Omega + (I/Tau) + Q) / (Omega + (I/Tau) - Q)) ) * I
     A = ((Omega + (I/Tau)) / (Q*2))*(log_real+log_imag) - 1
     sigma_0 = ((I * g * eV^2 * k_F) / (2 * math.pi^2 * hbar)) * (Omega / (Q^2)) * (((Omega + (I / Tau)) * A) / (Omega - (I / Tau) * A))
     
     -- with current bias 
-    log_real_b = math.log(complex.real((Omega_d + (I/Tau) + Q_d) / (Omega_d + (I/Tau) - Q_d)) )
+    log_real_b = math.log(complex.abs((Omega_d + (I/Tau) + Q_d) / (Omega_d + (I/Tau) - Q_d)) )
     log_imag_b = math.atan2(complex.imag((Omega_d + (I/Tau) + Q_d) / (Omega_d + (I/Tau) - Q_d)) , complex.real((Omega_d + (I/Tau) + Q_d) / (Omega_d + (I/Tau) - Q_d)) ) * I
     B = ((Omega_d + (I/Tau)) / (Q_d*2))*(log_real_b+log_imag_b) - 1
     sigma_d = (gamma^(-2/3))*( Omega/Omega_d)*((I * g * eV^2 * k_F) / (2 * math.pi^2 * hbar)) * (Omega_d / (Q_d^2)) * (((Omega_d + (I / Tau)) * B) / (Omega_d - (I / Tau) * B))
@@ -173,9 +173,14 @@ for freq=0.0150,0.1000,0.001 do
     --     {0, 0}, {0, 0}, {xx_0r, xx_0i}
     --     })
     -- Anisotropic:
+    -- S:SetMaterial("Cd3As2", {
+    --     {xx_dr, xx_di}, {0, 0}, {0, 0},
+    --     {0, 0}, {xx_0r, xx_0i}, {0, 0},
+    --     {0, 0}, {0, 0}, {xx_0r, xx_0i}
+    --     })
     S:SetMaterial("Cd3As2", {
-        {xx_dr, xx_di}, {0, 0}, {0, 0},
-        {0, 0}, {xx_0r, xx_0i}, {0, 0},
+        {xx_0r, xx_0i}, {0, 0}, {0, 0},
+        {0, 0}, {xx_dr, xx_di}, {0, 0},
         {0, 0}, {0, 0}, {xx_0r, xx_0i}
         })
 

@@ -50,7 +50,8 @@ def read_data_from_file(filename):
             max_y_arrays = 0
             for line in file:
                 values = line.split()
-                x = 1/float(values[0])
+                # x = 1/float(values[0])
+                x = float(values[0])
                 data['x'].append(x)
                 for i, y in enumerate(values[1:], 1):
                     y_value = float(y)
@@ -76,11 +77,11 @@ def plot_data_from_file(filename):
     for i, y_values in enumerate(data['y']):
         plt.plot(data['x'], y_values, marker='o', linestyle='-', label=f'y{i+1}')
 
-    plt.title('X-Y Data Plot')
+    # plt.title('X-Y Data Plot')
     # plt.xlabel('Frequency (um)^-1')
-    plt.xlabel('Wavelength (um)')
+    # plt.xlabel('Wavelength (um)')
     # plt.xlabel('m')
-    plt.ylabel('Reflection / Transmissions')
+    # plt.ylabel('Reflection / Transmissions')
     plt.legend()
     # plt.grid(True)
     plt.show()

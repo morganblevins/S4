@@ -1,0 +1,7 @@
+13000.0	-nan	-nan	-nan
+11504.4	-nan	-nan	-nan
+10317.5	-nan	-nan	-nan
+9352.5	-nan	-nan	-nan
+8552.6	-nan	-nan	-nan
+7878.8	-nan	-nan	-nan
+7303.4	-nan	-nan	-nan

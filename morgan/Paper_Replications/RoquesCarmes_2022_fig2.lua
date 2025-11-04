@@ -64,11 +64,25 @@ for freq=f0_start,f0_end,0.03 do
 	S:SetFrequency(freq)
 	forward,backward = S:GetPoyntingFlux('AirAbove', 0)
 	forward = S:GetPoyntingFlux('SiBelow', 0)
-	print (freq .. '\t' .. forward .. '\t' .. backward)
+	-- print (freq .. '\t' .. forward .. '\t' .. backward)
     file:write(string.format("%.2f\t%.2f\t%.2f\n", freq, forward, backward))
 	io.stdout:flush()
 end
 
 print("Generated filename:", filename)
- 
+
 file:close()
+
+-- Define the Python script file name
+local pythonScript = "morgan/plotdata.py"
+
+-- Execute the Python script using os.execute
+local command = "python3 " .. pythonScript .. " " .. filename
+local status = os.execute(command)
+
+-- Check the status of the execution
+if status == true then
+    print("Python script executed successfully.")
+else
+    print("Error executing Python script.")
+end
